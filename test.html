@@ -1,0 +1,108 @@
+<html>
+    <style>
+        .center {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            /* width: 50%; */
+        }
+    </style>
+    <head>
+        
+    </head>
+    <body>
+        <div id="logo" class="center">
+        </div>
+
+        <script>
+            // Customization table id
+            let crmAppId = 'bq679yza2';
+            let crmAppToken = 'dmexuzd7pkqn7mv4973cwpy2ws';
+            let customizationsTableId = 'bre8rihvf';
+
+            // Get the html elements that we need to modify
+            let logo = document.getElementById('logo');
+            getLogo()
+
+            /**
+             * Gets the list of companies that the user has created.
+             * @param {String} authToken 
+             */
+            async function getLogo() {
+                // Get the proper auth token
+                var authToken = await getTemporaryAuth(customizationsTableId, crmAppToken);
+console.log(authToken);
+
+                // Get the companies and contacts and store that information
+                var headers = getHeaders(authToken);
+                var body = {
+                    "from": customizationsTableId, 
+                    "select": [6]
+                }
+
+                // Send the request to get the company info
+                var responseInfo = await fetch('https://api.quickbase.com/v1/records/query',
+                {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(body)
+                }).catch(err => console.log(err))
+
+                // If the request succeeded, parse the data
+                if (responseInfo.ok) {
+                    var responseInfoJson = await responseInfo.json();
+                    var data = responseInfoJson.data;
+                    
+                    // Get the first logo found and set the logo's inner html to it
+                    logo.innerHTML = data[0]['6']['value'];
+                    // console.log(data[0]['6']['value']);
+
+                }
+                else {
+                    console.log(await responseInfo.json());
+                }
+            }
+
+            /**
+             * Gets a temporary authorization token for the user to perform actions on a specific table or app.
+             * @param {String} dbid 
+             * @param {String} appToken 
+             */
+             async function getTemporaryAuth(dbid, appToken) {
+                // Headers
+                var headers = {
+                    'QB-Realm-Hostname': 'lztek.quickbase.com',
+                    'Content-Type': 'application/json'
+                };
+
+                // Get the temporary authtoken for this user to import the data with
+                var result = await fetch('https://api.quickbase.com/v1/auth/temporary/' + dbid,
+                {
+                    method: 'GET',
+                    headers: headers,
+                    credentials: 'include'
+                });
+console.log(result);
+                var obj = await result.json();
+                // Interpret the result as json and get the temp auth
+                return obj.temporaryAuthorization;
+            }
+
+            /**
+             * Creates the headers using the given auth token.
+             * @param {String} authToken
+             * 
+             * @returns {Objects} headers 
+             */
+            function getHeaders(authToken) {
+                return {
+                    'QB-Realm-Hostname': 'lztek.quickbase.com',
+                    'Authorization': 'QB-TEMP-TOKEN ' + authToken,
+                    'Content-Type': 'application/json'
+                }
+            }
+
+        </script>
+        
+    </body>
+</html>
